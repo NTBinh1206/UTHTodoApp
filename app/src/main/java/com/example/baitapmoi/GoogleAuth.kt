@@ -43,3 +43,9 @@ suspend fun signInWithGoogle(
         onError(e.message ?: "Đã huỷ đăng nhập")
     }
 }
+
+fun signInAsGuest(onSuccess: () -> Unit, onError: (String) -> Unit) {
+    FirebaseAuth.getInstance().signInAnonymously()
+        .addOnSuccessListener { onSuccess() }
+        .addOnFailureListener { onError(it.message ?: "Lỗi đăng nhập khách") }
+}

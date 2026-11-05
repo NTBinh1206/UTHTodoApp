@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.ui.draw.shadow
+
 private val blueUTH = Color(0xFF2F5FE8)
 @Composable
 fun Ready(){
@@ -36,12 +39,27 @@ fun Ready(){
 }
 @Composable
 fun AppLogo(){
-    Box(){
+    Box(
+        modifier = Modifier.size(72.dp),
+
+    ){
         Icon(
             imageVector = Icons.Filled.Checklist,
             contentDescription = "Logo" ,
             tint = blueUTH ,
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier.size(40.dp)
         )
+    }
+}
+@Composable
+private fun LoginLogo(){
+    Box(
+        modifier = Modifier
+            .size(72.dp)
+            .shadow(16.dp, RoundedCornerShape(20.dp))
+            .background(Color(0xFF2F5FE8)),
+    contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Filled.Checklist, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
     }
 }

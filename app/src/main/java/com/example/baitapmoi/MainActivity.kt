@@ -5,6 +5,9 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,10 +15,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.baitapmoi.ui.theme.BaiTapMoiTheme
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -39,15 +42,33 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         },
-                        onGuest = { screen = "home" }
+                        onGuest = { signInAsGuest(
+                            onSuccess = { screen = "home" },
+                            onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
                         )
-                        "home" -> Text("Xin chào ${FirebaseAuth.getInstance().currentUser?.email ?: "bạn (khách)"}")
+                        }
+                        )
+                        "home", "list", "notice", "settings" -> Column(Modifier.fillMaxSize()) {
+                            Box(Modifier.weight(1f)) {
+                                when (screen) {
+                                    "home" -> HomePage(onNotice = { screen = "notice" })
+                                    "list" -> Text("Màn Danh sách (chưa làm)")
+                                    "notice" -> Text("Màn Thông báo (chưa làm)")
+                                    "settings" -> Text("Màn Cài đặt (chưa làm)")
+                                }
+                            }
+                            TaskBar(
+                                current = screen,
+                                onTabClick = { tab -> screen = tab },
+                                onAdd = {}
+                            )
+                        }
                     }
+
                 }
         }
     }
 }
-
 
 
 @Preview(showBackground = true)
