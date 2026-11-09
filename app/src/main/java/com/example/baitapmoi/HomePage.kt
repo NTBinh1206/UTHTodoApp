@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,13 +39,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,24 +66,18 @@ data class Task(
     val title: String = "",
     val time: String = "",
     val category: String = "",
-    val done: Boolean = false
+    val done: Boolean = false,
+    val day:String = "",
+    val priority: String = "",
 )
 
 @Composable
-fun HomePage(onNotice:()-> Unit){
-    val tasks = remember { mutableStateListOf<Task>() }
+fun HomePage(vm : TaskViewModel , onNotice:()-> Unit ){
     val context = LocalContext.current
-    var error by remember { mutableStateOf<String?>(null) }
+    val tasks = vm.tasks
+    val studyLeft = tasks.count { it.category == "Học tập" && !it.done }
+    val lifeLeft = tasks.count { it.category == "Cuộc sống" && !it.done }
 
-    LaunchedEffect(Unit) {
-        try {
-            val list = TaskApiClient.api.getTasks().map { it.toTask() }
-            tasks.clear()
-            tasks.addAll(list)
-        } catch (e: Exception) {
-            error = e.message
-        }
-    }
     val total = tasks.size
     val doneTask = tasks.count { it.done }
     val percent = if(total > 0 ) doneTask * 100 / total else 0
@@ -93,7 +91,7 @@ fun HomePage(onNotice:()-> Unit){
         .format(DateTimeFormatter.ofPattern("EEEE, d 'tháng' M", Locale.forLanguageTag("vi")))
         .replaceFirstChar {it.uppercase() }
     Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FA)).systemBarsPadding().padding(24.dp)
+        modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FA)).statusBarsPadding().padding(24.dp)
     ){
         Row(modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -128,10 +126,16 @@ fun HomePage(onNotice:()-> Unit){
             }
         }
         Spacer(Modifier.height(24.dp))
-        error?.let { Text("Lỗi tải dữ liệu: $it", color = Color.Red) }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ){
+            CategoryCard(Icons.Outlined.School , "Học tập", studyLeft , Color(0xFF2F5FE8), Modifier.weight(1f))
+            CategoryCard(Icons.Outlined.Home, "Cuộc sống", lifeLeft , Color(0xFFE8833A), Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(24.dp))
+        vm.error?.let { Text("Lỗi tải dữ liệu: $it", color = Color.Red) }
         TaskList(tasks, onToggle = { task ->
-            val i = tasks.indexOf(task)
-            tasks[i] = task.copy(done = !task.done)
+            vm.toggle(task)
             if(!task.done){
                 val bundle = Bundle().apply { putString("category", task.category) }
                 FirebaseAnalytics.getInstance(context).logEvent("task_completed", bundle)
@@ -220,10 +224,10 @@ fun TaskItem(task: Task, onToggle: (Task) -> Unit){
         ) {
             Box(modifier = Modifier.clickable { onToggle(task) }){
                 if(task.done) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null , tint = Color(0xFF2F5FE8))
                 }
                 else {
-                    Icon(Icons.Outlined.RadioButtonUnchecked , contentDescription = null)
+                    Icon(Icons.Outlined.RadioButtonUnchecked , contentDescription = null , tint = Color.LightGray )
                 }
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -234,7 +238,42 @@ fun TaskItem(task: Task, onToggle: (Task) -> Unit){
                 }
             }
             Box(){
-                Icon(Icons.Filled.ArrowForward, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null , tint = Color.LightGray)
             }
         }
+}
+@Composable
+private fun CategoryCard (
+    icon: ImageVector,
+    title: String,
+    left: Int,
+    color: Color,
+    modifier: Modifier = Modifier
+){
+    Column(
+        modifier = modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp)
+    ){
+        Box(
+            modifier = Modifier.size(36.dp).background(color.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ){
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(title, fontWeight = FontWeight.Bold , fontSize = 16.sp)
+        Text("$left việc còn lại" , color = Color.Gray, fontSize = 13.sp)
+    }
+}
+
+@Composable
+fun CategoryChip(category: String) {
+    val color = if (category == "Học tập") Color(0xFF2F5FE8) else Color(0xFFE8833A)
+    Text(
+        category,
+        color = color,
+        fontSize = 12.sp,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+    )
 }

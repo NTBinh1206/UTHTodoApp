@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.baitapmoi.ui.theme.BaiTapMoiTheme
 import kotlinx.coroutines.launch
 
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
                     var screen by rememberSaveable { mutableStateOf("intro")}
                     val context = LocalContext.current
                     val scope = rememberCoroutineScope()
+                    val taskVm: TaskViewModel = viewModel()
                     when (screen) {
                         "intro" -> IntroductionScreen(onFinish = { screen = "login" })
                         "login" -> LoginPage(
@@ -51,8 +53,8 @@ class MainActivity : ComponentActivity() {
                         "home", "list", "notice", "settings" -> Column(Modifier.fillMaxSize()) {
                             Box(Modifier.weight(1f)) {
                                 when (screen) {
-                                    "home" -> HomePage(onNotice = { screen = "notice" })
-                                    "list" -> Text("Màn Danh sách (chưa làm)")
+                                    "home" -> HomePage(vm = taskVm ,onNotice = { screen = "notice" })
+                                    "list" -> ListPage(vm = taskVm)
                                     "notice" -> Text("Màn Thông báo (chưa làm)")
                                     "settings" -> Text("Màn Cài đặt (chưa làm)")
                                 }
