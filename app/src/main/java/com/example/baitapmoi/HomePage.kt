@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -29,8 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,7 +39,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Tune
@@ -50,10 +46,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -69,10 +61,13 @@ data class Task(
     val done: Boolean = false,
     val day:String = "",
     val priority: String = "",
+    val note:String ="",
+    val subtasks: List<SubtaskDto> = emptyList(),
+    val remind: Boolean = false
 )
 
 @Composable
-fun HomePage(vm : TaskViewModel , onNotice:()-> Unit ){
+fun HomePage(vm : TaskViewModel , onNotice:()-> Unit , onOpen:(Task)-> Unit ){
     val context = LocalContext.current
     val tasks = vm.tasks
     val studyLeft = tasks.count { it.category == "Học tập" && !it.done }
@@ -140,7 +135,7 @@ fun HomePage(vm : TaskViewModel , onNotice:()-> Unit ){
                 val bundle = Bundle().apply { putString("category", task.category) }
                 FirebaseAnalytics.getInstance(context).logEvent("task_completed", bundle)
             }
-        }, modifier = Modifier.weight(1f))
+        },onOpen = onOpen , modifier = Modifier.weight(1f))
     }
 }
 @Composable
@@ -167,12 +162,12 @@ fun notice(onNotice: ()-> Unit ){
 }
 
 @Composable
-fun TaskList(tasks : List<Task> , onToggle: (Task) -> Unit , modifier:Modifier = Modifier){
+fun TaskList(tasks : List<Task> , onToggle: (Task) -> Unit , onOpen: (Task) -> Unit , modifier:Modifier = Modifier){
     Column(modifier = modifier){
         Text("Việc hôm nay " , fontSize = 18.sp , fontWeight = FontWeight.Bold)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)){
             items(tasks) { task ->
-                TaskItem(task, onToggle)
+                TaskItem(task, onToggle , onOpen)
             }
         }
     }
@@ -218,8 +213,8 @@ private fun TabItem(icon: ImageVector, label: String, selected: Boolean, onClick
     }
 }
 @Composable
-fun TaskItem(task: Task, onToggle: (Task) -> Unit){
-        Row(modifier = Modifier.fillMaxWidth().background(Color.White , RoundedCornerShape(16.dp)).padding(16.dp),
+fun TaskItem(task: Task, onToggle: (Task) -> Unit , onOpen: (Task) -> Unit){
+        Row(modifier = Modifier.fillMaxWidth().background(Color.White , RoundedCornerShape(16.dp)).clickable {onOpen(task)}.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(modifier = Modifier.clickable { onToggle(task) }){
@@ -230,11 +225,15 @@ fun TaskItem(task: Task, onToggle: (Task) -> Unit){
                     Icon(Icons.Outlined.RadioButtonUnchecked , contentDescription = null , tint = Color.LightGray )
                 }
             }
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(task.title)
-                Row() {
-                    Text(task.category)
-                    Text(task.time)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CategoryChip(task.category)
+                    Text(task.time, fontSize = 12.sp, color = Color.Gray)
                 }
             }
             Box(){
@@ -270,6 +269,17 @@ fun CategoryChip(category: String) {
     val color = if (category == "Học tập") Color(0xFF2F5FE8) else Color(0xFFE8833A)
     Text(
         category,
+        color = color,
+        fontSize = 12.sp,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+    )
+}
+@Composable
+fun Tag(text: String, color: Color) {
+    Text(
+        text,
         color = color,
         fontSize = 12.sp,
         modifier = Modifier

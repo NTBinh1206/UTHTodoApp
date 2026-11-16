@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             BaiTapMoiTheme {
                     var screen by rememberSaveable { mutableStateOf("intro")}
+                    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
                     val context = LocalContext.current
                     val scope = rememberCoroutineScope()
                     val taskVm: TaskViewModel = viewModel()
@@ -50,19 +51,53 @@ class MainActivity : ComponentActivity() {
                         )
                         }
                         )
+                        "detail" -> {
+                            val task = taskVm.tasks.find {it.id == selectedId}
+                            if(task!=null){
+                                DetailWork(
+                                    task = task ,
+                                    onBack = {screen = "home"},
+                        onEdit = { screen = "edit" },
+                        onToggle = { taskVm.toggle(task) }, onDelete = { taskVm.delete(task); screen = "home" }, onUpdate = { taskVm.update(it) }
+                    )
+                            }
+                        }
+                "new" -> EditTask(
+                    task = Task(category = "Học tập", day = java.time.LocalDate.now().toString(), time = "19:00", remind = true, priority = "medium"),
+                    isNew = true,
+                    onCancel = { screen = "home" },
+                    onSave = { newTask ->
+                        taskVm.add(newTask)
+                        screen = "home"
+                    }
+                )
+                "edit" -> {
+                    val task = taskVm.tasks.find { it.id == selectedId }
+                    if (task != null) {
+                        EditTask(
+                            task = task,
+                            onCancel = { screen = "detail" },
+                            onSave = { updated ->
+                                taskVm.update(updated)
+                                screen = "detail"
+                            }
+                        )
+                    }
+                }
                         "home", "list", "notice", "settings" -> Column(Modifier.fillMaxSize()) {
                             Box(Modifier.weight(1f)) {
                                 when (screen) {
-                                    "home" -> HomePage(vm = taskVm ,onNotice = { screen = "notice" })
-                                    "list" -> ListPage(vm = taskVm)
-                                    "notice" -> Text("Màn Thông báo (chưa làm)")
+                                    "home" -> HomePage(vm = taskVm ,onNotice = { screen = "notice" } ,
+                                        onOpen ={task -> selectedId = task.id; screen = "detail" } )
+                                    "list" -> ListPage(vm = taskVm , onOpen = {task -> selectedId = task.id; screen = "detail" })
+                                    "notice" -> NoticePage(onAddTask = { screen = "new" }, onOpenSettings = { screen = "settings" })
                                     "settings" -> Text("Màn Cài đặt (chưa làm)")
                                 }
                             }
                             TaskBar(
                                 current = screen,
                                 onTabClick = { tab -> screen = tab },
-                                onAdd = {}
+                                onAdd = { screen = "new" }
                             )
                         }
                     }

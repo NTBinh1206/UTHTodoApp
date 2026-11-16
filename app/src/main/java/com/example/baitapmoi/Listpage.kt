@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 
 @Composable
-fun ListPage(vm: TaskViewModel) {
+fun ListPage(vm: TaskViewModel , onOpen: (Task) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }        // chữ đang gõ trong ô tìm
     var filter by rememberSaveable { mutableStateOf("Tất cả") } // chip đang chọn
 
@@ -85,11 +85,11 @@ fun ListPage(vm: TaskViewModel) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ){
             item { SectionTitle("CẦN LÀM") }
-            items(todo) { task -> ListTaskRow(task, onToggle = { vm.toggle(task) }) }
+            items(todo) { task -> ListTaskRow(task, onToggle = { vm.toggle(task) } , onOpen = onOpen) }
 
             if (doneList.isNotEmpty()) {
                 item { SectionTitle("ĐÃ XONG") }
-                items(doneList) { task -> ListTaskRow(task, onToggle = { vm.toggle(task) }) }
+                items(doneList) { task -> ListTaskRow(task, onToggle = { vm.toggle(task) } , onOpen = onOpen) }
             }
 
             if (shown.isEmpty()) {
@@ -114,11 +114,12 @@ private fun SectionTitle(text: String) {
     Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
 }
 @Composable
-private fun ListTaskRow(task: Task, onToggle: () -> Unit) {
+private fun ListTaskRow(task: Task, onToggle: () -> Unit, onOpen: (Task) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White, RoundedCornerShape(16.dp))
+            .clickable {onOpen(task)}
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -159,8 +160,7 @@ private fun ListTaskRow(task: Task, onToggle: () -> Unit) {
         }
     }
 }
-
-private fun dateLabel(date: String, time: String): String {
+ fun dateLabel(date: String, time: String): String {
     val d = runCatching { LocalDate.parse(date) }.getOrNull() ?: return time
     val today = LocalDate.now()
     val dayText = when {
